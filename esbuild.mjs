@@ -73,6 +73,18 @@ const canvasHostBuild = esbuild.build({
   external: ['vscode'],
 });
 
+// Bundle the standalone MCP server (stdio; runs outside VS Code, no vscode)
+const mcpServerBuild = esbuild.build({
+  entryPoints: ['src/mcp/server.ts'],
+  bundle: true,
+  platform: 'node',
+  target: 'es2022',
+  format: 'cjs',
+  outfile: 'dist/mcp-server.cjs',
+  sourcemap: true,
+  external: ['vscode'],
+});
+
 // Bundle the webview script
 const webviewBuild = esbuild.build({
   entryPoints: ['src/webview/app.ts'],
@@ -84,7 +96,7 @@ const webviewBuild = esbuild.build({
   sourcemap: true,
 });
 
-await Promise.all([extensionBuild, workerBuild, parseWorkerBuild, cacheWriteWorkerBuild, canvasHostBuild, webviewBuild]);
+await Promise.all([extensionBuild, workerBuild, parseWorkerBuild, cacheWriteWorkerBuild, canvasHostBuild, mcpServerBuild, webviewBuild]);
 
 // Copy static webview assets
 const webviewDist = 'dist/webview';

@@ -3,6 +3,7 @@
   "entry": [
     "src/extension.ts",
     "src/canvas/host.ts",
+    "src/mcp/server.ts",
     "src/webview/app.ts",
     "src/core/warm-up-worker.ts",
     "src/core/parse-worker.ts",
