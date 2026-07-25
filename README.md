@@ -138,6 +138,80 @@ A few features depend on the local VS Code language model and are hidden in canv
 
 ---
 
+## Use from a terminal agent (MCP server)
+
+The coach also ships a standalone [MCP](https://modelcontextprotocol.io) server, so terminal agents such as Claude Code or Copilot CLI can query your usage data directly — no VS Code and no dashboard. It runs in a plain Node process, parses your local logs in process, and speaks MCP over stdio.
+
+### Setup
+
+1. Clone the repo and build once:
+
+```bash
+npm install && npm run build
+```
+
+This produces `dist/mcp-server.cjs`.
+
+2. Register it with your agent. For **Claude Code**, from anywhere:
+
+```bash
+claude mcp add ai-coach --scope user -- node /absolute/path/to/repo/dist/mcp-server.cjs
+```
+
+`--scope user` makes the server available in every project, which is usually what you want — your coaching data spans all your workspaces, not just this repo.
+
+For any other MCP client, point it at the same command:
+
+```json
+{
+  "mcpServers": {
+    "ai-coach": {
+      "command": "node",
+      "args": ["/absolute/path/to/repo/dist/mcp-server.cjs"]
+    }
+  }
+}
+```
+
+3. Verify the connection:
+
+```bash
+claude mcp list
+```
+
+Then just ask in natural language — _"show me my anti-patterns from the last 30 days"_, _"compare my Claude and Copilot usage"_, _"how is my flow state?"_ — and the agent picks the right tool.
+
+### Tools
+
+The server exposes the same twelve tools as the `@aicoach` chat participant, plus a reload:
+
+| Tool                                | Returns                                                                       |
+| ----------------------------------- | ----------------------------------------------------------------------------- |
+| `aiEngineerCoach_summary`           | Session counts, practice recommendations, top anti-patterns. Good entry point |
+| `aiEngineerCoach_activity`          | Daily requests, LOC, sessions, harness breakdown                              |
+| `aiEngineerCoach_credits`           | AI credit usage per model, daily trend, most expensive requests               |
+| `aiEngineerCoach_codeProduction`    | AI vs user LOC, language breakdown, workspace distribution                    |
+| `aiEngineerCoach_flow`              | Deep work scores, best hours, follow-up latency, session continuity           |
+| `aiEngineerCoach_patterns`          | Detected anti-patterns with severity, group scores, and trends                |
+| `aiEngineerCoach_insights`          | Learning velocity, intent mix, prompt maturity, sustainable pace              |
+| `aiEngineerCoach_wellbeing`         | Work-life balance score, weekend ratio, burnout risk                          |
+| `aiEngineerCoach_workflows`         | Repeated workflow clusters worth automating, with draft skill suggestions      |
+| `aiEngineerCoach_harnessComparison` | AI tools side by side: sessions, requests, LOC, models, cancel rates          |
+| `aiEngineerCoach_sessions`          | Browse or search individual sessions, or fetch one by ID                       |
+| `aiEngineerCoach_contextHealth`     | Compaction events, config health, agentic readiness, instruction quality       |
+| `aiEngineerCoach_reload`            | Re-parse the logs when a long-running server has gone stale                    |
+
+Every tool except `reload` accepts optional `fromDate`, `toDate`, `workspaceId`, and `harness` filters. `sessions` additionally takes `sessionId`, `page`, `pageSize`, and `search`.
+
+### Notes
+
+- The first tool call parses your logs and caches the result, so it is slower than the ones that follow. `aiEngineerCoach_reload` refreshes that cache after you have done more coding.
+- The server writes diagnostics to stderr only — stdout belongs to the JSON-RPC stream.
+- After changing anything under `src/`, re-run `npm run build`; the agent runs the bundle in `dist/`, not the sources.
+- To remove it again: `claude mcp remove ai-coach --scope user`.
+
+---
+
 ## Pages
 
 ### Observe
